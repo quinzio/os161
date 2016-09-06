@@ -102,7 +102,7 @@ boot(void)
 	kprintf("%s", harvard_copyright);
 	kprintf("\n");
 
-	kprintf("Davide Munari system version %s (%s #%d)\n",
+	kprintf("Davide Munari quinzio2yahoo.it  system version %s (%s #%d)\n",
 		GROUP_VERSION, buildconfig, buildversion);
 	kprintf("\n");
 
