@@ -357,8 +357,8 @@ cvtestthread(void *junk, unsigned long num)
 		while (testval1 != num) {
 			testval2 = 0;
 			random_yielder(4);
-			gettime(&ts1);
-			cv_wait(testcv, testlock);
+			gettime(&ts1); //kprintf("num %ld\n", num);
+			cv_wait(testcv, testlock); //kprintf("exit\n");
 			gettime(&ts2);
 			random_yielder(4);
 
@@ -384,7 +384,7 @@ cvtestthread(void *junk, unsigned long num)
 		 */
 		for (j=0; j<3000; j++);
 
-		random_yielder(4);
+		random_yielder(4); //kprintf("bcast %ld\n", num);
 		cv_broadcast(testcv, testlock);
 		random_yielder(4);
 		failif((testval1 != testval2));
