@@ -154,7 +154,10 @@ lock_create(const char *name)
 		return NULL;
 	}
 
-	// add stuff here as needed
+	lock->lock_wchan = wchan_create(lock->lk_name);
+	lock->is_locked = false; // not locked
+	lock->stack_addr = NULL;
+	spinlock_init(&lock->lock_spinlock);
 
 	return lock;
 }
@@ -173,27 +176,38 @@ lock_destroy(struct lock *lock)
 void
 lock_acquire(struct lock *lock)
 {
-	// Write this
-
-	(void)lock;  // suppress warning until code gets written
+	spinlock_acquire(&lock->lock_spinlock);
+	while (lock->is_locked == true)
+	{
+		wchan_sleep(lock->lock_wchan, &lock->lock_spinlock);
+	}
+	lock->stack_addr =  curthread->t_stack;
+	lock->is_locked = true;
+	//kprintf("lock_acquire\n");
+	spinlock_release(&lock->lock_spinlock);
 }
 
 void
 lock_release(struct lock *lock)
 {
-	// Write this
+	spinlock_acquire(&lock->lock_spinlock);
+	KASSERT(lock->is_locked == true); // don't change order
+	KASSERT(lock->stack_addr == curthread->t_stack);
+	lock->is_locked = false;
+	lock->stack_addr = NULL;
+	wchan_wakeone(lock->lock_wchan, &lock->lock_spinlock);
+	//kprintf("lock_release\n");
+	spinlock_release(&lock->lock_spinlock);
 
-	(void)lock;  // suppress warning until code gets written
 }
 
 bool
 lock_do_i_hold(struct lock *lock)
 {
 	// Write this
-
-	(void)lock;  // suppress warning until code gets written
-
-	return true; // dummy until code gets written
+	if(lock->is_locked)
+		return lock->stack_addr == curthread->t_stack;
+	return false; // dummy until code gets written
 }
 
 ////////////////////////////////////////////////////////////
