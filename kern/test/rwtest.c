@@ -125,13 +125,10 @@ void rthread(void * unused, unsigned long num) {
 
 	int i;
 	for (i = 0; i < 10; i++) {
-		kprintf("A\n");
 		rwlock_acquire_read(testrwl);
 		kprintf("Read thread %ld %d\n", num, i);
 		rwlock_release_read(testrwl);
-		kprintf("B\n");
 	}
-
 	V(endsem);
 	return;
 }

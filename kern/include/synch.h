@@ -91,6 +91,8 @@ void lock_destroy(struct lock *);
  *                   same time.
  *    lock_release - Free the lock. Only the thread holding the lock may do
  *                   this.
+ *    lock_release_rw - Free the lock. This lock may be uncloked by any 
+ *                      thead
  *    lock_do_i_hold - Return true if the current thread holds the lock;
  *                   false otherwise.
  *
@@ -98,6 +100,7 @@ void lock_destroy(struct lock *);
  */
 void lock_acquire(struct lock *);
 void lock_release(struct lock *);
+void lock_release_rw(struct lock *);
 bool lock_do_i_hold(struct lock *);
 
 

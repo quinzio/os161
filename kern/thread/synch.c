@@ -203,6 +203,20 @@ lock_release(struct lock *lock)
 
 }
 
+void
+lock_release_rw(struct lock *lock)
+{
+	spinlock_acquire(&lock->lock_spinlock);
+	KASSERT(lock->is_locked == true); // don't change order
+	// in this rw flavour, doesn't check that the lock is 
+	// released in the same thread in which it was acquired
+	lock->is_locked = false;
+	lock->stack_addr = NULL;
+	wchan_wakeone(lock->lock_wchan, &lock->lock_spinlock);
+	spinlock_release(&lock->lock_spinlock);
+
+}
+
 bool
 lock_do_i_hold(struct lock *lock)
 {
@@ -262,7 +276,6 @@ cv_wait(struct cv *cv, struct lock *lock)
 	// Write this
 	spinlock_acquire(&cv->spinlock);
 	lock_release(lock);
-	//kprintf("cvwait %d %d\n", spinlock_do_i_hold(&lock->lock_spinlock), count++);
 	wchan_sleep(cv->wchan, &cv->spinlock);
 	spinlock_release(&cv->spinlock);
 	lock_acquire(lock);
@@ -350,7 +363,7 @@ void rwlock_release_read(struct rwlock *rwl)
 {
 	lock_acquire(rwl->rd_lk);
 	if (rwl->reader_count == 1)
-		lock_release(rwl->wr_lk);
+	  lock_release_rw(rwl->wr_lk);
 	rwl->reader_count--;
 	lock_release(rwl->rd_lk);
 }

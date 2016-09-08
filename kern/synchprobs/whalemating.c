@@ -40,12 +40,31 @@
 #include <test.h>
 #include <synch.h>
 
+struct cv *cv_male;
+struct cv *cv_female;
+struct cv *cv_matchmaker;
+struct lock *lk;
+struct population_t {
+  int males;
+  int females;
+  int matchmakers; 
+} population;
+
 /*
  * Called by the driver during initialization.
  */
 
 void whalemating_init() {
-	return;
+  cv_male =  cv_create("male cv");
+  cv_female = cv_create("female cv");
+  cv_matchmaker = cv_create("matchmaker cv");
+  lk = lock_create("lock");
+  lock_acquire(lk);
+  population.males = 0;
+  population.females = 0;
+  population.matchmakers = 0;
+  lock_release(lk);
+  return;
 }
 
 /*
@@ -54,38 +73,90 @@ void whalemating_init() {
 
 void
 whalemating_cleanup() {
-	return;
+  cv_destroy(cv_male);
+  cv_destroy(cv_female);
+  cv_destroy(cv_matchmaker);
+  lock_destroy(lk);
+  return;
 }
 
 void
 male(uint32_t index)
 {
-	(void)index;
-	/*
-	 * Implement this function by calling male_start and male_end when
-	 * appropriate.
-	 */
-	return;
+  (void)index;
+  /*
+   * Implement this function by calling male_start and male_end when
+   * appropriate.
+   */
+  male_start(index);
+
+  lock_acquire(lk);
+  population.males++;
+  if(population.females > 0 && population.matchmakers > 0) {
+    cv_signal(cv_female, lk);
+    cv_signal(cv_matchmaker, lk);
+  }
+  else {
+    cv_wait(cv_male, lk);	
+  }
+
+  population.males--;
+  lock_release(lk);
+
+  male_end(index);
+  return;
 }
 
 void
 female(uint32_t index)
 {
-	(void)index;
-	/*
-	 * Implement this function by calling female_start and female_end when
-	 * appropriate.
-	 */
-	return;
+  (void)index;
+  /*
+   * Implement this function by calling female_start and female_end when
+   * appropriate.
+   */
+  female_start(index);
+
+  lock_acquire(lk);
+  population.females++;
+  if(population.males > 0 && population.matchmakers > 0) {
+    cv_signal(cv_male, lk);
+    cv_signal(cv_matchmaker, lk);
+  }
+  else {
+    cv_wait(cv_female, lk);	
+  }
+
+  population.females--;
+  lock_release(lk);
+
+  female_end(index);
+  return;
 }
 
 void
 matchmaker(uint32_t index)
 {
-	(void)index;
-	/*
-	 * Implement this function by calling matchmaker_start and matchmaker_end
-	 * when appropriate.
-	 */
-	return;
+  (void)index;
+  /*
+   * Implement this function by calling matchmaker_start and matchmaker_end
+   * when appropriate.
+   */
+  matchmaker_start(index);
+
+  lock_acquire(lk);
+  population.matchmakers++;
+  if(population.females > 0 && population.males > 0) {
+    cv_signal(cv_female, lk);
+    cv_signal(cv_male, lk);
+  }
+  else {
+    cv_wait(cv_matchmaker, lk);	
+  }
+
+  population.matchmakers--;
+  lock_release(lk);
+
+  matchmaker_end(index);
+  return;
 }
